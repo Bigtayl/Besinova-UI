@@ -1,0 +1,128 @@
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(const BesinovaApp());
+}
+
+class BesinovaApp extends StatelessWidget {
+  const BesinovaApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Besinova',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        primaryColor: const Color(0xFF4CAF50),
+        scaffoldBackgroundColor: const Color(0xFFF5F5F5),
+        colorScheme: ColorScheme.fromSwatch().copyWith(
+          secondary: const Color(0xFFFF9800),
+        ),
+        useMaterial3: true,
+      ),
+      home: const HomeScreen(),
+    );
+  }
+}
+
+class HomeScreen extends StatelessWidget {
+  const HomeScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF4CAF50),
+        title: const Text('Besinova'),
+        centerTitle: true,
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Hoş Geldin!',
+              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Bugün nasıl yardımcı olabiliriz?',
+              style: TextStyle(fontSize: 16),
+            ),
+            const SizedBox(height: 24),
+            Expanded(
+              child: GridView.count(
+                crossAxisCount: 2,
+                crossAxisSpacing: 16,
+                mainAxisSpacing: 16,
+                children: [
+                  _buildHomeCard(
+                    context,
+                    icon: Icons.shopping_cart,
+                    title: 'Alışveriş Listem',
+                    onTap: () {
+                      // TODO: Alışveriş listesi sayfası
+                    },
+                  ),
+                  _buildHomeCard(
+                    context,
+                    icon: Icons.fastfood,
+                    title: 'Besin Önerileri',
+                    onTap: () {
+                      // TODO: Besin önerileri sayfası
+                    },
+                  ),
+                  _buildHomeCard(
+                    context,
+                    icon: Icons.analytics,
+                    title: 'Analizlerim',
+                    onTap: () {
+                      // TODO: Analizler sayfası
+                    },
+                  ),
+                  _buildHomeCard(
+                    context,
+                    icon: Icons.settings,
+                    title: 'Ayarlar',
+                    onTap: () {
+                      // TODO: Ayarlar sayfası
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  static Widget _buildHomeCard(BuildContext context,
+      {required IconData icon,
+      required String title,
+      required VoidCallback onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Card(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        elevation: 4,
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 48, color: Color(0xFF4CAF50)),
+              const SizedBox(height: 8),
+              Text(
+                title,
+                style: const TextStyle(fontSize: 16),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
