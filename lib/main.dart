@@ -18,7 +18,8 @@ void main() {
       providers: [
         ChangeNotifierProvider(create: (_) => ThemeProvider()), // Tema yönetimi
         ChangeNotifierProvider(
-            create: (_) => UserProvider()), // Kullanıcı verileri
+            create: (_) => UserProvider()
+              ..loadUserData()), // Kullanıcı verileri ve varsayılan verileri yükle
       ],
       child: const BesinovaApp(),
     ),

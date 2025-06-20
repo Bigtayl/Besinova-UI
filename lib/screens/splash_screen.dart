@@ -18,9 +18,9 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    // 4 saniye sonra AuthGate'e geçiş
+    // 4 saniye sonra direkt HomeScreen'e geçiş (sign in sürecini atla)
     Timer(const Duration(seconds: 4), () {
-      Navigator.of(context).pushReplacementNamed('/auth');
+      Navigator.of(context).pushReplacementNamed('/home');
     });
   }
 

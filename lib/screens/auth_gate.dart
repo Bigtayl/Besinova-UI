@@ -35,6 +35,8 @@ class _AuthGateState extends State<AuthGate> {
         body: Center(child: CircularProgressIndicator()),
       );
     }
-    return _hasAccount! ? const SignInScreen() : const SignUpScreen();
+    // Geçici olarak her zaman SignInScreen'e yönlendir
+    // return _hasAccount! ? const SignInScreen() : const SignUpScreen();
+    return const SignInScreen();
   }
 }

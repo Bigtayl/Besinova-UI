@@ -338,6 +338,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   const Divider(color: Colors.white24),
                                   _buildLanguageSelector(),
                                   const Divider(color: Colors.white24),
+                                  _buildBudgetSetting(),
+                                  const Divider(color: Colors.white24),
                                   _buildSettingItem(
                                     'Hakkında',
                                     Icons.info_outline,
@@ -497,6 +499,270 @@ class _SettingsScreenState extends State<SettingsScreen> {
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
         borderSide: const BorderSide(color: settingsColor),
+      ),
+    );
+  }
+
+  Widget _buildBudgetSetting() {
+    final userProvider = Provider.of<UserProvider>(context);
+    final currentBudget = userProvider.budget;
+
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: const Icon(Icons.account_balance_wallet_outlined,
+          color: Colors.white70),
+      title: const Text(
+        'Aylık Bütçe',
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: 16,
+        ),
+      ),
+      subtitle: Text(
+        currentBudget > 0
+            ? '₺${currentBudget.toStringAsFixed(0)}'
+            : 'Bütçe belirlenmedi',
+        style: TextStyle(
+          color: currentBudget > 0 ? settingsColor : Colors.white60,
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+      trailing: const Icon(Icons.chevron_right, color: Colors.white70),
+      onTap: () => _showBudgetDialog(),
+    );
+  }
+
+  void _showBudgetDialog() {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    double selectedBudget =
+        userProvider.budget > 0 ? userProvider.budget : 5000.0;
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          backgroundColor: midnightBlue,
+          title: const Text(
+            'Aylık Bütçe Belirle',
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 20,
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Besin önerilerin bu bütçeye göre optimize edilecek',
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: 14,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              // Bütçe değeri gösterimi
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: settingsColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: settingsColor.withOpacity(0.3),
+                    width: 1,
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.account_balance_wallet,
+                      color: settingsColor,
+                      size: 24,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '₺${selectedBudget.toStringAsFixed(0)}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+              // Slider
+              Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        '₺1.000',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.7),
+                          fontSize: 12,
+                        ),
+                      ),
+                      Text(
+                        '₺50.000',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.7),
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  SliderTheme(
+                    data: SliderTheme.of(context).copyWith(
+                      activeTrackColor: settingsColor,
+                      inactiveTrackColor: Colors.white.withOpacity(0.2),
+                      thumbColor: settingsColor,
+                      overlayColor: settingsColor.withOpacity(0.2),
+                      thumbShape: const RoundSliderThumbShape(
+                        enabledThumbRadius: 12,
+                        elevation: 4,
+                      ),
+                      overlayShape: const RoundSliderOverlayShape(
+                        overlayRadius: 20,
+                      ),
+                      trackHeight: 6,
+                    ),
+                    child: Slider(
+                      value: selectedBudget,
+                      min: 1000.0,
+                      max: 50000.0,
+                      divisions:
+                          490, // 50000-1000 = 49000, 49000/100 = 490 divisions
+                      onChanged: (value) {
+                        setState(() {
+                          selectedBudget = value;
+                        });
+                      },
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              // Hızlı seçim butonları - Güncellenmiş fiyatlar
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _buildQuickBudgetButton('₺5.000', 5000.0, selectedBudget,
+                      (value) {
+                    setState(() {
+                      selectedBudget = value;
+                    });
+                  }),
+                  _buildQuickBudgetButton('₺10.000', 10000.0, selectedBudget,
+                      (value) {
+                    setState(() {
+                      selectedBudget = value;
+                    });
+                  }),
+                  _buildQuickBudgetButton('₺20.000', 20000.0, selectedBudget,
+                      (value) {
+                    setState(() {
+                      selectedBudget = value;
+                    });
+                  }),
+                ],
+              ),
+              const SizedBox(height: 12),
+              // İkinci satır hızlı seçim butonları
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _buildQuickBudgetButton('₺17.000', 17000.0, selectedBudget,
+                      (value) {
+                    setState(() {
+                      selectedBudget = value;
+                    });
+                  }),
+                  _buildQuickBudgetButton('₺25.000', 25000.0, selectedBudget,
+                      (value) {
+                    setState(() {
+                      selectedBudget = value;
+                    });
+                  }),
+                  _buildQuickBudgetButton('₺35.000', 35000.0, selectedBudget,
+                      (value) {
+                    setState(() {
+                      selectedBudget = value;
+                    });
+                  }),
+                ],
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text(
+                'İptal',
+                style: TextStyle(color: Colors.white70),
+              ),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: settingsColor,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              onPressed: () {
+                userProvider.setBudget(selectedBudget);
+                Navigator.of(context).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                        'Bütçe ₺${selectedBudget.toStringAsFixed(0)} olarak ayarlandı'),
+                    backgroundColor: settingsColor,
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                );
+              },
+              child: const Text('Kaydet'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildQuickBudgetButton(String label, double value,
+      double selectedValue, Function(double) onTap) {
+    final isSelected = (selectedValue - value).abs() < 50; // 50 TL tolerans
+
+    return GestureDetector(
+      onTap: () => onTap(value),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? settingsColor : Colors.white.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isSelected ? settingsColor : Colors.white.withOpacity(0.2),
+            width: 1,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? Colors.white : Colors.white70,
+            fontSize: 12,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+          ),
+        ),
       ),
     );
   }

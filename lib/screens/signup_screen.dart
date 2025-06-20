@@ -169,18 +169,19 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     ),
                   ),
                   const SizedBox(height: 18),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(builder: (_) => const SignInScreen()),
-                      );
-                    },
-                    child: const Text(
-                      "Zaten hesabın var mı? Giriş Yap",
-                      style: TextStyle(color: Colors.white70, fontSize: 15),
-                    ),
-                  ),
+                  // Sign in butonu geçici olarak yorum satırına alındı
+                  // TextButton(
+                  //   onPressed: () {
+                  //     Navigator.pushReplacement(
+                  //       context,
+                  //       MaterialPageRoute(builder: (_) => const SignInScreen()),
+                  //     );
+                  //   },
+                  //   child: const Text(
+                  //     "Zaten hesabın var mı? Giriş Yap",
+                  //     style: TextStyle(color: Colors.white70, fontSize: 15),
+                  //   ),
+                  // ),
                 ],
               ),
             ),

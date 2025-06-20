@@ -25,6 +25,9 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   String _gender = 'Erkek';
   final List<String> _genderOptions = ['Erkek', 'Kadın'];
 
+  // Scroll kontrolü için controller
+  final ScrollController _scrollController = ScrollController();
+
   // Aktivite seviyesi ve çarpanları
   String _activityLevel = 'Hareketsiz';
   final Map<String, double> _activityMultipliers = {
@@ -50,10 +53,41 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     'Sporcu için besin önerisi',
   ];
 
+  // Akordiyon yapısı için state değişkeni
+  bool _showResults = false;
+  bool _isCalculating = false;
+
+  // Sonuçlar kartı için key
+  final GlobalKey _resultsKey = GlobalKey();
+
   @override
   void initState() {
     super.initState();
     _loadProfiles();
+
+    // Input alanlarına listener ekle
+    _heightController.addListener(_onInputChanged);
+    _weightController.addListener(_onInputChanged);
+    _ageController.addListener(_onInputChanged);
+  }
+
+  @override
+  void dispose() {
+    _heightController.dispose();
+    _weightController.dispose();
+    _nameController.dispose();
+    _ageController.dispose();
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  /// Input alanları değiştiğinde sonuçları kapat
+  void _onInputChanged() {
+    if (_showResults) {
+      setState(() {
+        _showResults = false;
+      });
+    }
   }
 
   /// SharedPreferences ile profilleri yükler.
@@ -123,6 +157,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
       _bmr = null;
       _tdee = null;
       _recommendation = '';
+      _showResults = false; // Yeni profil eklendiğinde sonuçları kapat
     });
     _saveProfiles();
     _saveSelectedProfileIndex(_selectedIndex);
@@ -143,6 +178,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
       _bmr = null;
       _tdee = null;
       _recommendation = '';
+      _showResults = false; // Profil değiştiğinde sonuçları kapat
     });
     _saveSelectedProfileIndex(index);
     _syncUserProviderWithProfile(index);
@@ -179,6 +215,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                   _bmr = null;
                   _tdee = null;
                   _recommendation = '';
+                  _showResults = false; // Profil silindiğinde sonuçları kapat
                 });
                 _saveProfiles();
                 _saveSelectedProfileIndex(_selectedIndex);
@@ -213,7 +250,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   }
 
   /// BMI, BMR ve TDEE hesaplar ve öneri üretir.
-  void _calculateBMI() {
+  void _calculateBMI() async {
     final double? height = double.tryParse(_heightController.text);
     final double? weight = double.tryParse(_weightController.text);
     final double? age = double.tryParse(_ageController.text);
@@ -223,6 +260,15 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
         age != null &&
         height > 0 &&
         age > 0) {
+      // Hesaplama başladığında loading göster
+      setState(() {
+        _isCalculating = true;
+        _showResults = false;
+      });
+
+      // Kısa bir gecikme ile animasyon efekti
+      await Future.delayed(const Duration(milliseconds: 800));
+
       final double heightInMeters = height / 100;
       final double bmi = weight / (heightInMeters * heightInMeters);
 
@@ -241,6 +287,9 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
         _bmi = bmi;
         _bmr = bmr;
         _tdee = tdee;
+        _isCalculating = false;
+        _showResults = true; // Sonuçları göster
+
         if (_selectedIndex >= 0) {
           _profiles[_selectedIndex]['height'] = _heightController.text;
           _profiles[_selectedIndex]['weight'] = _weightController.text;
@@ -273,11 +322,31 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
               'Sağlığın için kilo vermen önemli. Günlük kalori ihtiyacın: ${tdee.toStringAsFixed(0)} kcal';
         }
       });
+
+      // Sonuçlar gösterildikten sonra otomatik scroll yap
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_scrollController.hasClients &&
+            _resultsKey.currentContext != null) {
+          // Sonuçlar kartının pozisyonunu bul
+          final RenderBox renderBox =
+              _resultsKey.currentContext!.findRenderObject() as RenderBox;
+          final position = renderBox.localToGlobal(Offset.zero);
+
+          // Sonuçlar kartının üst kısmına scroll yap
+          _scrollController.animateTo(
+            _scrollController.offset + position.dy - 100, // 100px üstten boşluk
+            duration: const Duration(milliseconds: 1000),
+            curve: Curves.easeInOut,
+          );
+        }
+      });
     } else {
       setState(() {
         _bmi = null;
         _bmr = null;
         _tdee = null;
+        _isCalculating = false;
+        _showResults = false;
         _recommendation = 'Lütfen geçerli bir boy, kilo ve yaş girin.';
       });
     }
@@ -286,7 +355,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   /// BMI değerine göre renk döndürür (görsel gösterim için)
   Color _bmiColor() {
     if (_bmi == null) {
-      return Colors.black;
+      return Colors.grey; // Null durumunda gri renk
     } else if (_bmi! < 18.5) {
       return Colors.lightBlue;
     } else if (_bmi! >= 18.5 && _bmi! <= 24.9) {
@@ -374,6 +443,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                   horizontal: 20,
                   vertical: 16,
                 ),
+                controller: _scrollController,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -627,6 +697,9 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                                   onChanged: (value) {
                                     setState(() {
                                       _gender = value!;
+                                      if (_showResults) {
+                                        _showResults = false;
+                                      }
                                     });
                                   },
                                 ),
@@ -700,6 +773,9 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                             onChanged: (value) {
                               setState(() {
                                 _activityLevel = value!;
+                                if (_showResults) {
+                                  _showResults = false;
+                                }
                               });
                             },
                           ),
@@ -770,6 +846,9 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                             onChanged: (value) {
                               setState(() {
                                 _purpose = value!;
+                                if (_showResults) {
+                                  _showResults = false;
+                                }
                               });
                             },
                           ),
@@ -781,7 +860,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: _calculateBMI,
+                        onPressed: _isCalculating ? null : _calculateBMI,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: analyticsColor,
                           foregroundColor: Colors.white,
@@ -791,19 +870,48 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                           ),
                           elevation: 0,
                         ),
-                        child: const Text(
-                          'Hesapla',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
+                        child: _isCalculating
+                            ? Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                          Colors.white),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  const Text(
+                                    'Hesaplanıyor...',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              )
+                            : const Text(
+                                'Hesapla',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
                       ),
                     ),
                     const SizedBox(height: 20),
-                    // Sonuçlar kartı
-                    if (_bmi != null)
-                      Container(
+                    // Sonuçlar kartı - Akordiyon yapısı
+                    AnimatedCrossFade(
+                      duration: const Duration(milliseconds: 500),
+                      crossFadeState: _showResults
+                          ? CrossFadeState.showSecond
+                          : CrossFadeState.showFirst,
+                      firstChild: const SizedBox.shrink(),
+                      secondChild: Container(
+                        key: _resultsKey,
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
                           color: Colors.white.withOpacity(0.1),
@@ -854,26 +962,44 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
+                                const Spacer(),
+                                // Kapatma butonu
+                                IconButton(
+                                  onPressed: () {
+                                    setState(() {
+                                      _showResults = false;
+                                    });
+                                  },
+                                  icon: const Icon(
+                                    Icons.keyboard_arrow_up,
+                                    color: Colors.white,
+                                    size: 24,
+                                  ),
+                                ),
                               ],
                             ),
                             const SizedBox(height: 16),
                             _buildResultCard(
                               title: 'Vücut Kitle İndeksi (BMI)',
-                              value: _bmi!.toStringAsFixed(1),
+                              value: _bmi?.toStringAsFixed(1) ?? 'N/A',
                               color: _bmiColor(),
                               icon: Icons.monitor_weight,
                             ),
                             const SizedBox(height: 12),
                             _buildResultCard(
                               title: 'Bazal Metabolizma Hızı (BMR)',
-                              value: '${_bmr!.toStringAsFixed(0)} kcal',
+                              value: _bmr != null
+                                  ? '${_bmr!.toStringAsFixed(0)} kcal'
+                                  : 'N/A',
                               color: Colors.blue,
                               icon: Icons.local_fire_department,
                             ),
                             const SizedBox(height: 12),
                             _buildResultCard(
                               title: 'Günlük Kalori İhtiyacı (TDEE)',
-                              value: '${_tdee!.toStringAsFixed(0)} kcal',
+                              value: _tdee != null
+                                  ? '${_tdee!.toStringAsFixed(0)} kcal'
+                                  : 'N/A',
                               color: Colors.orange,
                               icon: Icons.restaurant,
                             ),
@@ -910,6 +1036,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                           ],
                         ),
                       ),
+                    ),
                   ],
                 ),
               ),

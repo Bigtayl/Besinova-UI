@@ -20,6 +20,8 @@ class UserProvider with ChangeNotifier {
   int _loginCount = 0;
   String _lastLogin = '';
   int _completedGoals = 0;
+  double _budget = 0.0; // Bütçe alanı eklendi
+  int _notificationCount = 3; // Bildirim sayısı eklendi
 
   // Getter'lar
   String get name => _name;
@@ -34,6 +36,9 @@ class UserProvider with ChangeNotifier {
   int get loginCount => _loginCount;
   String get lastLogin => _lastLogin;
   int get completedGoals => _completedGoals;
+  double get budget => _budget; // Bütçe getter'ı eklendi
+  int get notificationCount =>
+      _notificationCount; // Bildirim sayısı getter'ı eklendi
 
   /// Avatarı günceller ve kaydeder.
   void setAvatar(String newAvatar) {
@@ -71,21 +76,33 @@ class UserProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  /// Bütçeyi günceller ve kaydeder.
+  void setBudget(double newBudget) {
+    _budget = newBudget;
+    saveUserData(budget: newBudget);
+    notifyListeners();
+  }
+
   /// Local storage'dan kullanıcı verilerini yükler.
   Future<void> loadUserData() async {
     final prefs = await SharedPreferences.getInstance();
-    _name = prefs.getString('name') ?? '';
-    _email = prefs.getString('email') ?? '';
-    _height = prefs.getDouble('height') ?? 0;
-    _weight = prefs.getDouble('weight') ?? 0;
-    _age = prefs.getInt('age') ?? 0;
-    _gender = prefs.getString('gender') ?? '';
-    _activityLevel = prefs.getString('activityLevel') ?? '';
-    _goal = prefs.getString('goal') ?? '';
+    _name = prefs.getString('name') ?? 'Kullanıcı'; // Varsayılan isim
+    _email = prefs.getString('email') ??
+        'kullanici@besinova.com'; // Varsayılan email
+    _height = prefs.getDouble('height') ?? 170.0; // Varsayılan boy
+    _weight = prefs.getDouble('weight') ?? 70.0; // Varsayılan kilo
+    _age = prefs.getInt('age') ?? 25; // Varsayılan yaş
+    _gender = prefs.getString('gender') ?? 'Erkek'; // Varsayılan cinsiyet
+    _activityLevel = prefs.getString('activityLevel') ??
+        'Orta'; // Varsayılan aktivite seviyesi
+    _goal = prefs.getString('goal') ?? 'Sağlıklı Yaşam'; // Varsayılan hedef
     _avatar = prefs.getString('avatar') ?? '🍏';
-    _loginCount = prefs.getInt('loginCount') ?? 0;
-    _lastLogin = prefs.getString('lastLogin') ?? '';
+    _loginCount = prefs.getInt('loginCount') ?? 1; // Varsayılan giriş sayısı
+    _lastLogin = prefs.getString('lastLogin') ?? DateTime.now().toString();
     _completedGoals = prefs.getInt('completedGoals') ?? 0;
+    _budget = prefs.getDouble('budget') ?? 5000.0; // Varsayılan bütçe
+    _notificationCount =
+        prefs.getInt('notificationCount') ?? 3; // Varsayılan bildirim sayısı
     notifyListeners();
   }
 
@@ -103,6 +120,8 @@ class UserProvider with ChangeNotifier {
     int? loginCount,
     String? lastLogin,
     int? completedGoals,
+    double? budget,
+    int? notificationCount,
   }) async {
     final prefs = await SharedPreferences.getInstance();
 
@@ -153,6 +172,14 @@ class UserProvider with ChangeNotifier {
     if (completedGoals != null) {
       _completedGoals = completedGoals;
       await prefs.setInt('completedGoals', completedGoals);
+    }
+    if (budget != null) {
+      _budget = budget;
+      await prefs.setDouble('budget', budget);
+    }
+    if (notificationCount != null) {
+      _notificationCount = notificationCount;
+      await prefs.setInt('notificationCount', notificationCount);
     }
     notifyListeners();
   }

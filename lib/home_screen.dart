@@ -147,6 +147,111 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                 ),
+                actions: [
+                  // Bildirim ikonu
+                  Container(
+                    margin: const EdgeInsets.only(right: 8),
+                    child: Consumer<UserProvider>(
+                      builder: (context, userProvider, child) {
+                        return IconButton(
+                          onPressed: () {
+                            // Bildirimler sayfasına git (gelecekte eklenebilir)
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Bildirimler yakında eklenecek!'),
+                                duration: Duration(seconds: 2),
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                          },
+                          icon: Stack(
+                            children: [
+                              const Icon(
+                                Icons.notifications_outlined,
+                                color: Colors.white,
+                                size: 28,
+                              ),
+                              // Bildirim sayısı badge'i (sadece bildirim varsa göster)
+                              if (userProvider.notificationCount > 0)
+                                Positioned(
+                                  right: 0,
+                                  top: 0,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(2),
+                                    decoration: BoxDecoration(
+                                      color: Colors.red,
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    constraints: const BoxConstraints(
+                                      minWidth: 16,
+                                      minHeight: 16,
+                                    ),
+                                    child: Text(
+                                      userProvider.notificationCount > 99
+                                          ? '99+'
+                                          : userProvider.notificationCount
+                                              .toString(),
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  // Profil ikonu
+                  Container(
+                    margin: const EdgeInsets.only(right: 16),
+                    child: Consumer<UserProvider>(
+                      builder: (context, userProvider, child) {
+                        return GestureDetector(
+                          onTap: () {
+                            // Profil sayfasına git
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const ProfileScreen(),
+                              ),
+                            );
+                          },
+                          child: Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: Colors.white.withOpacity(0.3),
+                                width: 2,
+                              ),
+                            ),
+                            child: Center(
+                              child: userProvider.avatar.isNotEmpty &&
+                                      userProvider.avatar.length == 2 &&
+                                      userProvider.avatar.codeUnitAt(0) > 255
+                                  ? Text(
+                                      userProvider.avatar,
+                                      style: const TextStyle(fontSize: 20),
+                                    )
+                                  : const Icon(
+                                      Icons.person,
+                                      color: Colors.white,
+                                      size: 24,
+                                    ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
               )
             : null,
         // Ana içerik
