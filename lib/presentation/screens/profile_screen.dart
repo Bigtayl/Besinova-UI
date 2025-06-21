@@ -4,8 +4,9 @@
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import '../../presentation/presentation.dart';
+import '../../data/services/storage_service.dart';
+import '../../presentation/providers/user_provider.dart';
+import 'signin_screen.dart';
 
 /// Profil ekranı: Kullanıcı avatarı, adı, emaili, vücut ölçüleri, istatistikler ve çıkış butonu içerir.
 class ProfileScreen extends StatefulWidget {
@@ -286,12 +287,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  /// Firebase sign out fonksiyonu
+  /// Local sign out fonksiyonu
   Future<void> _signOut() async {
     try {
-      await FirebaseAuth.instance.signOut();
+      // Clear user data from storage
+      await StorageService.clearAll();
+
+      // Clear user provider data
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      await userProvider.clearUserData();
+
       if (context.mounted) {
-        Navigator.of(context).pushReplacementNamed('/auth');
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const SignInScreen()),
+        );
       }
     } catch (e) {
       if (context.mounted) {

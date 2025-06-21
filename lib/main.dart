@@ -4,9 +4,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'core/constants/app_constants.dart';
-import 'core/services/localization_service.dart';
 import 'core/theme/app_theme.dart';
 import 'presentation/providers/theme_provider.dart';
 import 'presentation/providers/user_provider.dart';
@@ -18,14 +16,6 @@ import 'presentation/screens/signup_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // Firebase'i initialize et
-  try {
-    await Firebase.initializeApp();
-  } catch (e) {
-    // Firebase yapılandırması yoksa devam et (development için)
-    print('Firebase initialization failed: $e');
-  }
 
   runApp(const BesinovaApp());
 }

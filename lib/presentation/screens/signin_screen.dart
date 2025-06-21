@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
-import '../../presentation/presentation.dart';
+import '../../data/services/storage_service.dart';
+import '../../presentation/providers/user_provider.dart';
 import 'signup_screen.dart';
 
 class SignInScreen extends StatefulWidget {
@@ -32,13 +32,18 @@ class _SignInScreenState extends State<SignInScreen> {
     });
 
     try {
-      final userCredential =
-          await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: _emailController.text.trim(),
-        password: _passwordController.text,
-      );
+      await StorageService.init();
 
-      if (userCredential.user != null) {
+      // Get stored credentials
+      final storedEmail = StorageService.prefs.getString('user_email');
+      final storedPassword = StorageService.prefs.getString('user_password');
+
+      final enteredEmail = _emailController.text.trim();
+      final enteredPassword = _passwordController.text;
+
+      // Check if credentials match
+      if (storedEmail == enteredEmail && storedPassword == enteredPassword) {
+        // Success - load user data and navigate
         final userProvider = Provider.of<UserProvider>(context, listen: false);
         await userProvider.loadUserData();
         userProvider.incrementLoginCount();
@@ -47,35 +52,15 @@ class _SignInScreenState extends State<SignInScreen> {
         if (context.mounted) {
           Navigator.pushReplacementNamed(context, '/home');
         }
+      } else {
+        // Invalid credentials
+        setState(() {
+          _errorText = 'E-posta veya şifre hatalı';
+        });
       }
-    } on FirebaseAuthException catch (e) {
-      String errorMessage;
-      switch (e.code) {
-        case 'user-not-found':
-          errorMessage = 'Bu e-posta adresi ile kayıtlı kullanıcı bulunamadı';
-          break;
-        case 'wrong-password':
-          errorMessage = 'Hatalı şifre';
-          break;
-        case 'invalid-email':
-          errorMessage = 'Geçersiz e-posta adresi';
-          break;
-        case 'user-disabled':
-          errorMessage = 'Bu hesap devre dışı bırakılmış';
-          break;
-        case 'too-many-requests':
-          errorMessage =
-              'Çok fazla başarısız giriş denemesi. Lütfen daha sonra tekrar deneyin';
-          break;
-        default:
-          errorMessage = 'Giriş yapılırken bir hata oluştu: ${e.message}';
-      }
-      setState(() {
-        _errorText = errorMessage;
-      });
     } catch (e) {
       setState(() {
-        _errorText = 'Beklenmeyen bir hata oluştu';
+        _errorText = 'Giriş yapılırken bir hata oluştu';
       });
     } finally {
       if (mounted) {

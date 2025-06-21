@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
-import '../../presentation/presentation.dart';
+import '../../data/services/storage_service.dart';
+import '../../presentation/providers/user_provider.dart';
 import 'signin_screen.dart';
 
 class SignUpScreen extends StatefulWidget {
@@ -37,57 +37,41 @@ class _SignUpScreenState extends State<SignUpScreen> {
     });
 
     try {
-      // Firebase Auth ile kullanıcı oluştur
-      final userCredential =
-          await FirebaseAuth.instance.createUserWithEmailAndPassword(
+      await StorageService.init();
+
+      // Check if email already exists
+      final existingEmail = StorageService.prefs.getString('user_email');
+      if (existingEmail == _emailController.text.trim()) {
+        setState(() {
+          _errorText = 'Bu e-posta adresi zaten kullanımda';
+        });
+        return;
+      }
+
+      // Save credentials
+      await StorageService.prefs
+          .setString('user_email', _emailController.text.trim());
+      await StorageService.prefs
+          .setString('user_password', _passwordController.text);
+
+      // Create user data
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      await userProvider.updateUserField(
+        name: _nameController.text,
         email: _emailController.text.trim(),
-        password: _passwordController.text,
+        gender: 'Belirtilmemiş',
+        age: 0,
+        avatar: '👤',
+        loginCount: 0,
+        lastLogin: DateTime.now().toString(),
       );
 
-      if (userCredential.user != null) {
-        // Kullanıcı profilini güncelle
-        await userCredential.user!.updateDisplayName(_nameController.text);
-
-        // UserProvider'a kullanıcı bilgilerini kaydet
-        final userProvider = Provider.of<UserProvider>(context, listen: false);
-        await userProvider.updateUserField(
-          name: _nameController.text,
-          email: _emailController.text.trim(),
-          gender: 'Belirtilmemiş',
-          age: 0,
-          avatar: '👤',
-          loginCount: 0,
-          lastLogin: DateTime.now().toString(),
-        );
-
-        if (context.mounted) {
-          Navigator.pushReplacementNamed(context, '/home');
-        }
+      if (context.mounted) {
+        Navigator.pushReplacementNamed(context, '/home');
       }
-    } on FirebaseAuthException catch (e) {
-      String errorMessage;
-      switch (e.code) {
-        case 'weak-password':
-          errorMessage = 'Şifre çok zayıf. En az 6 karakter kullanın';
-          break;
-        case 'email-already-in-use':
-          errorMessage = 'Bu e-posta adresi zaten kullanımda';
-          break;
-        case 'invalid-email':
-          errorMessage = 'Geçersiz e-posta adresi';
-          break;
-        case 'operation-not-allowed':
-          errorMessage = 'E-posta/şifre girişi etkin değil';
-          break;
-        default:
-          errorMessage = 'Kayıt sırasında bir hata oluştu: ${e.message}';
-      }
-      setState(() {
-        _errorText = errorMessage;
-      });
     } catch (e) {
       setState(() {
-        _errorText = 'Beklenmeyen bir hata oluştu';
+        _errorText = 'Kayıt sırasında bir hata oluştu';
       });
     } finally {
       if (mounted) {
