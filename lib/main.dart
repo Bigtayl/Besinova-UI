@@ -4,119 +4,77 @@
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'theme_provider.dart';
-import 'home_screen.dart';
-import 'user_provider.dart';
-import 'screens/splash_screen.dart';
-import 'screens/auth_gate.dart';
-import 'screens/forgot_password_screen.dart';
-import 'screens/settings_screen.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'core/constants/app_constants.dart';
+import 'core/services/localization_service.dart';
+import 'core/theme/app_theme.dart';
+import 'presentation/providers/theme_provider.dart';
+import 'presentation/providers/user_provider.dart';
+import 'presentation/screens/splash_screen.dart';
+import 'presentation/screens/home_screen.dart';
+import 'presentation/screens/auth_gate.dart';
+import 'presentation/screens/signin_screen.dart';
+import 'presentation/screens/signup_screen.dart';
 
-void main() {
-  // Uygulama başlatılırken Provider ile global state yönetimi sağlanır.
-  runApp(
-    MultiProvider(
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Firebase'i initialize et
+  try {
+    await Firebase.initializeApp();
+  } catch (e) {
+    // Firebase yapılandırması yoksa devam et (development için)
+    print('Firebase initialization failed: $e');
+  }
+
+  runApp(const BesinovaApp());
+}
+
+/// Main application widget
+class BesinovaApp extends StatelessWidget {
+  const BesinovaApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => ThemeProvider()), // Tema yönetimi
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(
-            create: (_) => UserProvider()
-              ..loadUserData()), // Kullanıcı verileri ve varsayılan verileri yükle
+          create: (_) => UserProvider()..loadUserData(),
+        ),
       ],
-      child: const BesinovaApp(),
-    ),
-  );
+      child: const _BesinovaAppContent(),
+    );
+  }
+}
+
+/// Application content widget
+class _BesinovaAppContent extends StatelessWidget {
+  const _BesinovaAppContent();
+
+  @override
+  Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+
+    return MaterialApp(
+      title: AppConstants.appName,
+      debugShowCheckedModeBanner: false,
+      themeMode: themeProvider.themeMode,
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      home: const SplashScreen(),
+      routes: {
+        '/home': (context) => const HomeScreen(),
+        '/auth': (context) => const AuthGate(),
+        '/signin': (context) => const SignInScreen(),
+        '/signup': (context) => const SignUpScreen(),
+      },
+    );
+  }
 }
 
 // Basit çeviri fonksiyonu (ileride gerçek localization ile değiştirilebilir)
 String t(String key) {
   // Placeholder for localization. In the future, use Intl or similar.
   return key;
-}
-
-/// Uygulamanın ana widget'ı. Tema, rotalar ve genel ayarlar burada yapılır.
-class BesinovaApp extends StatelessWidget {
-  const BesinovaApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final themeProvider = Provider.of<ThemeProvider>(context);
-    // Tema renkleri
-    const Color tropicalLime = Color(0xFFA3EBB1);
-    const Color deepFern = Color(0xFF52796F);
-    const Color midnightBlue = Color(0xFF2C3E50);
-    const Color whiteSmoke = Color(0xFFF5F5F5);
-
-    return MaterialApp(
-      title: 'Besinova',
-      debugShowCheckedModeBanner: false,
-      themeMode: themeProvider.themeMode,
-      // Açık tema ayarları
-      theme: ThemeData(
-        useMaterial3: true,
-        textTheme: GoogleFonts.poppinsTextTheme(ThemeData.light().textTheme),
-        scaffoldBackgroundColor: whiteSmoke,
-        appBarTheme: AppBarTheme(
-          backgroundColor: deepFern.withValues(alpha: 0.95),
-          elevation: 0,
-        ),
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: deepFern,
-          secondary: tropicalLime,
-          surface: whiteSmoke,
-          onSurface: midnightBlue,
-        ),
-        cardTheme: CardTheme(
-          color: whiteSmoke,
-          elevation: 4,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-        inputDecorationTheme: InputDecorationTheme(
-          filled: true,
-          fillColor: Colors.white,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-      ),
-      // Koyu tema ayarları
-      darkTheme: ThemeData(
-        useMaterial3: true,
-        textTheme: GoogleFonts.poppinsTextTheme(
-          ThemeData.dark().textTheme,
-        ),
-        scaffoldBackgroundColor: midnightBlue,
-        appBarTheme: AppBarTheme(
-          backgroundColor: deepFern.withValues(alpha: 0.95),
-          elevation: 0,
-        ),
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: deepFern,
-          brightness: Brightness.dark,
-          secondary: tropicalLime,
-          surface: midnightBlue.withValues(alpha: 0.8),
-          onSurface: whiteSmoke,
-        ),
-        cardTheme: CardTheme(
-          color: midnightBlue.withValues(alpha: 0.8),
-          elevation: 4,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-        inputDecorationTheme: InputDecorationTheme(
-          filled: true,
-          fillColor: midnightBlue.withValues(alpha: 0.8),
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-      ),
-      home: const SplashScreen(), // Açılışta SplashScreen gösterilir
-      routes: {
-        '/home': (context) => const HomeScreen(), // Ana ekran rotası
-        '/auth': (context) => const AuthGate(), // AuthGate rotası
-        '/forgot': (context) => const ForgotPasswordScreen(), // Şifre sıfırlama
-        '/settings': (context) => const SettingsScreen(), // Ayarlar ekranı
-      },
-    );
-  }
 }
