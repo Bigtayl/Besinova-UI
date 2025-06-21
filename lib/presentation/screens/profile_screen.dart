@@ -7,6 +7,8 @@ import 'package:provider/provider.dart';
 import '../../data/services/storage_service.dart';
 import '../../presentation/providers/user_provider.dart';
 import 'signin_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 
 /// Profil ekranı: Kullanıcı avatarı, adı, emaili, vücut ölçüleri, istatistikler ve çıkış butonu içerir.
 class ProfileScreen extends StatefulWidget {
@@ -31,17 +33,42 @@ class _ProfileScreenState extends State<ProfileScreen> {
     '🦸‍♀️'
   ];
   String _selectedAvatar = '🍏'; // Ekranda geçici olarak tutulan avatar
+  Map<String, dynamic>? _profileData;
 
   @override
   void initState() {
     super.initState();
-    // Uygulama açıldığında UserProvider'dan avatarı çek
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final userProvider = Provider.of<UserProvider>(context, listen: false);
-      setState(() {
-        _selectedAvatar = userProvider.avatar;
-      });
-    });
+    _loadProfileFromAnalytics();
+  }
+
+  Future<void> _loadProfileFromAnalytics() async {
+    final prefs = await SharedPreferences.getInstance();
+    final String? profilesString = prefs.getString('profiles');
+    final int? selectedIndex = prefs.getInt('selectedProfileIndex');
+    if (profilesString != null && selectedIndex != null) {
+      final List profiles = json.decode(profilesString);
+      if (profiles.isNotEmpty && selectedIndex >= 0 && selectedIndex < profiles.length) {
+        setState(() {
+          _profileData = Map<String, dynamic>.from(profiles[selectedIndex]);
+        });
+      }
+    }
+  }
+
+  Future<void> _saveAvatarToProfile(String avatar) async {
+    final prefs = await SharedPreferences.getInstance();
+    final String? profilesString = prefs.getString('profiles');
+    final int? selectedIndex = prefs.getInt('selectedProfileIndex');
+    if (profilesString != null && selectedIndex != null) {
+      final List profiles = json.decode(profilesString);
+      if (profiles.isNotEmpty && selectedIndex >= 0 && selectedIndex < profiles.length) {
+        profiles[selectedIndex]['avatar'] = avatar;
+        await prefs.setString('profiles', json.encode(profiles));
+        setState(() {
+          _profileData = Map<String, dynamic>.from(profiles[selectedIndex]);
+        });
+      }
+    }
   }
 
   @override
@@ -81,25 +108,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
       setState(() {
         _selectedAvatar = chosen;
       });
-      final userProvider = Provider.of<UserProvider>(context, listen: false);
-      userProvider.setAvatar(chosen);
+      await _saveAvatarToProfile(chosen);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final userProvider = Provider.of<UserProvider>(context);
-    final userName = userProvider.name;
-    final userEmail = userProvider.email;
-    final userHeight = userProvider.height;
-    final userWeight = userProvider.weight;
-    final userAge = userProvider.age;
-    final userGender = userProvider.gender;
-    final userActivityLevel = userProvider.activityLevel;
-    final userGoal = userProvider.goal;
-    final userLoginCount = userProvider.loginCount;
-    final userLastLogin = userProvider.lastLogin;
-    final userCompletedGoals = userProvider.completedGoals;
+    final profile = _profileData;
+    final userName = profile?['name'] ?? 'Hoş geldin!';
+    final userEmail = profile?['email'] ?? '';
+    final userHeight = profile?['height'] ?? '';
+    final userWeight = profile?['weight'] ?? '';
+    final userAge = profile?['age'] ?? '';
+    final userGender = profile?['gender'] ?? '';
+    final userActivityLevel = profile?['activityLevel'] ?? '';
+    final userGoal = profile?['purpose'] ?? '';
+    final userLoginCount = profile?['loginCount'] ?? '';
+    final userLastLogin = profile?['lastLogin'] ?? '';
+    final userCompletedGoals = profile?['completedGoals'] ?? '';
+    final userAvatar = profile?['avatar'] ?? _selectedAvatar;
 
     return Scaffold(
       backgroundColor: const Color(0xFF2C3E50),
@@ -171,7 +198,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             backgroundColor:
                                 Colors.white.withValues(alpha: 0.15),
                             child: Text(
-                              Provider.of<UserProvider>(context).avatar,
+                              userAvatar,
                               style: const TextStyle(fontSize: 48),
                             ),
                           ),
@@ -179,20 +206,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         const SizedBox(height: 12),
                         // Kullanıcı adı
                         Text(
-                          userName.isNotEmpty ? userName : 'Hoş geldin!',
+                          userName.toString().isNotEmpty ? userName.toString() : 'Hoş geldin!',
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
+                            letterSpacing: 0.2,
                           ),
                         ),
                         const SizedBox(height: 4),
                         // Kullanıcı email
                         Text(
-                          userEmail,
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.7),
+                          userEmail.toString(),
+                          style: const TextStyle(
+                            color: Color(0xFFFFB86C),
                             fontSize: 16,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -210,19 +239,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       icon: Icons.monitor_weight_outlined,
                       children: [
                         _buildInfoRow(
-                            'Boy',
-                            userHeight > 0
-                                ? '${userHeight.toStringAsFixed(1)} cm'
-                                : '-'),
+                            'Boy', userHeight.toString().isNotEmpty ? '${userHeight.toString()} cm' : '-'),
                         _buildInfoRow(
-                            'Kilo',
-                            userWeight > 0
-                                ? '${userWeight.toStringAsFixed(1)} kg'
-                                : '-'),
+                            'Kilo', userWeight.toString().isNotEmpty ? '${userWeight.toString()} kg' : '-'),
                         _buildInfoRow(
-                            'Yaş', userAge > 0 ? userAge.toString() : '-'),
-                        _buildInfoRow('Cinsiyet',
-                            userGender.isNotEmpty ? userGender : '-'),
+                            'Yaş', userAge.toString().isNotEmpty ? userAge.toString() : '-'),
+                        _buildInfoRow('Cinsiyet', userGender.toString().isNotEmpty ? userGender.toString() : '-'),
                       ],
                     ),
                     const SizedBox(height: 16),
@@ -231,8 +253,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       title: 'Aktivite ve Hedef',
                       icon: Icons.fitness_center,
                       children: [
-                        _buildInfoRow('Aktivite Seviyesi', userActivityLevel),
-                        _buildInfoRow('Hedef', userGoal),
+                        _buildInfoRow('Aktivite Seviyesi', userActivityLevel.toString()),
+                        _buildInfoRow('Hedef', userGoal.toString()),
                       ],
                     ),
                     const SizedBox(height: 16),
@@ -244,7 +266,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         _buildInfoRow(
                             'Toplam Giriş', userLoginCount.toString()),
                         _buildInfoRow('Son Giriş',
-                            userLastLogin.isNotEmpty ? userLastLogin : '-'),
+                            userLastLogin.toString().isNotEmpty ? userLastLogin.toString() : '-'),
                         _buildInfoRow('Tamamlanan Hedefler',
                             userCompletedGoals.toString()),
                       ],
@@ -270,9 +292,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         child: const Text(
                           'Çıkış Yap',
                           style: TextStyle(
-                            color: Colors.white,
+                            color: Color(0xFFFFB86C),
                             fontSize: 16,
-                            fontWeight: FontWeight.w600,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.2,
                           ),
                         ),
                       ),
@@ -323,10 +346,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
+        color: Colors.white.withOpacity(0.13),
         borderRadius: BorderRadius.circular(20),
         border:
-            Border.all(color: Colors.white.withValues(alpha: 0.2), width: 1),
+            Border.all(color: Colors.white.withOpacity(0.22), width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -336,18 +359,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
+                  color: Colors.white.withOpacity(0.18),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(icon, color: Colors.white, size: 24),
+                child: Icon(icon, color: const Color(0xFFFFB86C), size: 24),
               ),
               const SizedBox(width: 12),
               Text(
                 title,
                 style: const TextStyle(
-                  color: Colors.white,
+                  color: Color(0xFFFFB86C),
                   fontSize: 18,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.2,
                 ),
               ),
             ],
@@ -368,17 +392,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
         children: [
           Text(
             label,
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.7),
-              fontSize: 16,
-            ),
-          ),
-          Text(
-            value,
             style: const TextStyle(
               color: Colors.white,
               fontSize: 16,
               fontWeight: FontWeight.w500,
+            ),
+          ),
+          Text(
+            value,
+            style: TextStyle(
+              color: value == '-' ? Colors.white.withOpacity(0.5) : const Color(0xFFFFB86C),
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
             ),
           ),
         ],

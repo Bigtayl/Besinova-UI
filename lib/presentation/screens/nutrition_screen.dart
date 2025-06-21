@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:provider/provider.dart';
 import '../../presentation/presentation.dart';
+import 'settings_screen.dart';
 
 /// Besin önerileri ekranı: Kişiselleştirilmiş besin önerileri ve makro değerleri.
 class NutritionScreen extends StatefulWidget {
@@ -237,29 +238,38 @@ class _NutritionScreenState extends State<NutritionScreen>
                     scrollDirection: Axis.horizontal,
                     itemCount: categories.length,
                     itemBuilder: (context, index) {
+                      final isSelected = _selectedCategory == categories[index];
                       return Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 4),
                         child: ChoiceChip(
                           label: Text(
                             categories[index],
                             style: TextStyle(
-                              color: _selectedCategory == categories[index]
+                              color: isSelected
                                   ? const Color(0xFF2C3E50)
-                                  : Colors.white,
-                              fontSize: 14,
+                                  : const Color(0xFF222222),
+                              fontSize: 15,
+                              fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                              letterSpacing: 0.1,
                             ),
                           ),
-                          selected: _selectedCategory == categories[index],
+                          selected: isSelected,
                           onSelected: (selected) {
                             setState(() {
                               _selectedCategory = categories[index];
                             });
                           },
-                          backgroundColor: Colors.white.withValues(alpha: 0.1),
+                          backgroundColor: isSelected
+                              ? nutritionColor
+                              : const Color(0xFFECECEC),
                           selectedColor: nutritionColor,
+                          side: BorderSide(
+                            color: isSelected ? nutritionColor : Colors.black.withOpacity(0.08),
+                            width: 1.2,
+                          ),
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 8,
+                            horizontal: 14,
+                            vertical: 9,
                           ),
                         ),
                       );
@@ -270,6 +280,9 @@ class _NutritionScreenState extends State<NutritionScreen>
             ),
           ),
           const SizedBox(height: 20),
+          // Açılır-Kapanır Analiz Sonuçları Paneli
+          _AnalysisResultsExpansionPanel(),
+          const SizedBox(height: 16),
           // Bütçe optimizasyonu kartı
           Consumer<UserProvider>(
             builder: (context, userProvider, child) {
@@ -483,7 +496,10 @@ class _NutritionScreenState extends State<NutritionScreen>
                       width: double.infinity,
                       child: ElevatedButton.icon(
                         onPressed: () {
-                          Navigator.pushNamed(context, '/settings');
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const SettingsScreen()),
+                          );
                         },
                         icon: const Icon(Icons.settings),
                         label: Text(
@@ -949,6 +965,177 @@ class _NutritionScreenState extends State<NutritionScreen>
             minHeight: 8,
           ),
         ),
+      ],
+    );
+  }
+}
+
+// Açılır-kapanır analiz paneli widget'ı
+class _AnalysisResultsExpansionPanel extends StatefulWidget {
+  @override
+  State<_AnalysisResultsExpansionPanel> createState() => _AnalysisResultsExpansionPanelState();
+}
+
+class _AnalysisResultsExpansionPanelState extends State<_AnalysisResultsExpansionPanel> {
+  Future<Map<String, dynamic>> _getSelectedProfile() async {
+    final prefs = await SharedPreferences.getInstance();
+    final String? profilesString = prefs.getString('profiles');
+    final int? selectedIndex = prefs.getInt('selectedProfileIndex');
+    if (profilesString != null && selectedIndex != null) {
+      final List<dynamic> decoded = json.decode(profilesString);
+      if (selectedIndex >= 0 && selectedIndex < decoded.length) {
+        final Map<String, dynamic> profile = Map<String, dynamic>.from(decoded[selectedIndex]);
+        return profile;
+      }
+    }
+    return {};
+  }
+
+  double _calculateBMI(dynamic weight, dynamic height) {
+    final w = double.tryParse(weight?.toString() ?? '0') ?? 0;
+    final h = double.tryParse(height?.toString() ?? '0') ?? 0;
+    if (w > 0 && h > 0) {
+      final hM = h / 100;
+      return w / (hM * hM);
+    }
+    return 0;
+  }
+
+  double _calculateBMR(dynamic weight, dynamic height, dynamic age, dynamic gender) {
+    final w = double.tryParse(weight?.toString() ?? '0') ?? 0;
+    final h = double.tryParse(height?.toString() ?? '0') ?? 0;
+    final a = int.tryParse(age?.toString() ?? '0') ?? 0;
+    final g = (gender?.toString() ?? '').toLowerCase();
+    if (w > 0 && h > 0 && a > 0) {
+      if (g == 'erkek') {
+        return 10 * w + 6.25 * h - 5 * a + 5;
+      } else {
+        return 10 * w + 6.25 * h - 5 * a - 161;
+      }
+    }
+    return 0;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<Map<String, dynamic>>(
+      future: _getSelectedProfile(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        final profile = snapshot.data;
+        double bmi = 0;
+        double bmr = 0;
+        if (profile != null && profile.isNotEmpty) {
+          bmi = double.tryParse(profile['bmi']?.toString() ?? '') ??
+                _calculateBMI(profile['weight'], profile['height']);
+          bmr = double.tryParse(profile['bmr']?.toString() ?? '') ??
+                _calculateBMR(profile['weight'], profile['height'], profile['age'], profile['gender']);
+        }
+        return Container(
+          margin: const EdgeInsets.only(bottom: 8),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.13),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: const Color(0xFFFFB86C).withValues(alpha: 0.3),
+              width: 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFFFFB86C).withValues(alpha: 0.08),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: ExpansionTile(
+            initiallyExpanded: false,
+            tilePadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+            title: Row(
+              children: [
+                Icon(Icons.analytics_outlined, color: const Color(0xFFFFB86C), size: 26),
+                const SizedBox(width: 10),
+                Text('Analiz Sonuçların', style: TextStyle(color: const Color(0xFFFFB86C), fontSize: 17, fontWeight: FontWeight.bold)),
+              ],
+            ),
+            children: [
+              if (profile == null || profile.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Row(
+                    children: [
+                      Icon(Icons.info_outline, color: const Color(0xFFFFB86C), size: 24),
+                      const SizedBox(width: 10),
+                      const Expanded(
+                        child: Text(
+                          'Analizlerim ekranından bir profil oluşturup analiz yapmalısın. Sonuçlar burada görünecek.',
+                          style: TextStyle(color: Colors.white, fontSize: 15),
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              else ...[
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Wrap(
+                    spacing: 18,
+                    runSpacing: 10,
+                    children: [
+                      _buildAnalysisInfo('İsim', profile['name'] ?? '-'),
+                      _buildAnalysisInfo('Yaş', profile['age']?.toString() ?? '-'),
+                      _buildAnalysisInfo('Cinsiyet', profile['gender'] ?? '-'),
+                      _buildAnalysisInfo('Boy', profile['height']?.toString() ?? '-'),
+                      _buildAnalysisInfo('Kilo', profile['weight']?.toString() ?? '-'),
+                      _buildAnalysisInfo('Hedef', profile['purpose'] ?? '-'),
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      _buildAnalysisResult('BMI', bmi > 0 ? bmi.toStringAsFixed(1) : '-'),
+                      _buildAnalysisResult('BMR', bmr > 0 ? bmr.toStringAsFixed(0) : '-'),
+                      _buildAnalysisResult('TDEE', profile['tdee'] ?? ''),
+                    ],
+                  ),
+                ),
+                if (profile['tdee'] != null && profile['tdee'].toString().isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 20, bottom: 12),
+                    child: Text('Günlük kalori ihtiyacın: ${profile['tdee'].toString().split('.')[0]} kcal',
+                        style: TextStyle(color: Colors.white.withValues(alpha: 0.9), fontSize: 15, fontWeight: FontWeight.w500)),
+                  ),
+              ],
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildAnalysisInfo(String label, String value) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFB86C).withValues(alpha: 0.09),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Text('$label: $value', style: const TextStyle(color: Colors.white, fontSize: 14)),
+    );
+  }
+
+  Widget _buildAnalysisResult(String label, dynamic value) {
+    return Column(
+      children: [
+        Text(label, style: const TextStyle(color: Color(0xFFFFB86C), fontSize: 15, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 6),
+        Text(value != null && value.toString().isNotEmpty ? value.toString().split('.')[0] : '-',
+            style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
       ],
     );
   }

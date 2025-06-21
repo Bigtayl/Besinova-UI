@@ -579,8 +579,10 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                                     style: TextStyle(
                                       color: _selectedIndex == index
                                           ? deepFern
-                                          : Colors.white,
-                                      fontSize: 14,
+                                          : const Color(0xFF222222),
+                                      fontSize: 15,
+                                      fontWeight: _selectedIndex == index ? FontWeight.bold : FontWeight.w600,
+                                      letterSpacing: 0.1,
                                     ),
                                   ),
                                   selected: _selectedIndex == index,
@@ -589,12 +591,17 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                                       _selectProfile(index);
                                     }
                                   },
-                                  backgroundColor:
-                                      Colors.white.withValues(alpha: 0.1),
+                                  backgroundColor: _selectedIndex == index
+                                      ? Colors.white
+                                      : const Color(0xFFECECEC),
                                   selectedColor: Colors.white,
+                                  side: BorderSide(
+                                    color: _selectedIndex == index ? deepFern : Colors.black.withOpacity(0.08),
+                                    width: 1.2,
+                                  ),
                                   padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 8,
+                                    horizontal: 14,
+                                    vertical: 9,
                                   ),
                                 ),
                               ),

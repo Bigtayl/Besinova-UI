@@ -31,7 +31,7 @@ class AppConstants {
   static const String defaultGoal = 'Sağlıklı Yaşam';
   static const String defaultAvatar = '🍏';
   static const int defaultLoginCount = 1;
-  static const double defaultBudget = 5000.0;
+  static const double defaultBudget = 0.0;
   static const int defaultNotificationCount = 3;
 
   static const Duration splashDuration = Duration(seconds: 4);

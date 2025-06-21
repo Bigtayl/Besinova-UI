@@ -170,6 +170,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
   static const Color settingsColor = Color(0xFFBD93F9);
   static const Color tropicalLime = Color(0xFFA3EBB1);
 
+  @override
+  void initState() {
+    super.initState();
+    _fixLegacyBudget();
+  }
+
+  Future<void> _fixLegacyBudget() async {
+    final prefs = await SharedPreferences.getInstance();
+    final double? oldBudget = prefs.getDouble('budget');
+    if (oldBudget != null && oldBudget == 5000.0) {
+      await prefs.setDouble('budget', 0.0);
+      if (mounted) setState(() {});
+    }
+  }
+
   Future<void> _editProfile() async {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     final TextEditingController nameController =
@@ -284,6 +299,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    debugResetBudget(); // DEBUG: her build'de bütçeyi sıfırla
     final userProvider = Provider.of<UserProvider>(context);
 
     // Tema renkleri
@@ -665,12 +681,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
       subtitle: Text(
         currentBudget > 0
-            ? '₺${currentBudget.toStringAsFixed(0)}'
+            ? 'Bütçeniz: ₺${currentBudget.toStringAsFixed(0)}'
             : 'Bütçe belirlenmedi',
         style: TextStyle(
           color: currentBudget > 0 ? settingsColor : Colors.white60,
           fontSize: 14,
-          fontWeight: FontWeight.w500,
+          fontWeight: FontWeight.w600,
         ),
       ),
       trailing: const Icon(Icons.chevron_right, color: Colors.white70),
@@ -861,8 +877,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
-              onPressed: () {
-                userProvider.setBudget(selectedBudget);
+              onPressed: () async {
+                await userProvider.setBudget(selectedBudget);
+                if (mounted) setState(() {}); // Ekranı güncelle
                 Navigator.of(context).pop();
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
@@ -913,5 +930,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> debugResetBudget() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setDouble('budget', 0.0);
+    // print('Bütçe sıfırlandı!');
   }
 }

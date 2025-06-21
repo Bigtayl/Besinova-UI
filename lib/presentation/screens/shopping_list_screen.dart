@@ -234,6 +234,7 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
                             scrollDirection: Axis.horizontal,
                             itemCount: categories.length,
                             itemBuilder: (context, index) {
+                              final isSelected = _selectedCategory == categories[index];
                               return Padding(
                                 padding:
                                     const EdgeInsets.symmetric(horizontal: 4),
@@ -241,26 +242,31 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
                                   label: Text(
                                     categories[index],
                                     style: TextStyle(
-                                      color:
-                                          _selectedCategory == categories[index]
-                                              ? midnightBlue
-                                              : Colors.white,
-                                      fontSize: 14,
+                                      color: isSelected
+                                          ? midnightBlue
+                                          : const Color(0xFF222222),
+                                      fontSize: 15,
+                                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                                      letterSpacing: 0.1,
                                     ),
                                   ),
-                                  selected:
-                                      _selectedCategory == categories[index],
+                                  selected: isSelected,
                                   onSelected: (selected) {
                                     setState(() {
                                       _selectedCategory = categories[index];
                                     });
                                   },
-                                  backgroundColor:
-                                      Colors.white.withValues(alpha: 0.1),
+                                  backgroundColor: isSelected
+                                      ? shoppingColor
+                                      : const Color(0xFFECECEC),
                                   selectedColor: shoppingColor,
+                                  side: BorderSide(
+                                    color: isSelected ? shoppingColor : Colors.black.withOpacity(0.08),
+                                    width: 1.2,
+                                  ),
                                   padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 8,
+                                    horizontal: 14,
+                                    vertical: 9,
                                   ),
                                 ),
                               );
