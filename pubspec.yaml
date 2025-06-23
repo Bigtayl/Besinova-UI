@@ -1,0 +1,46 @@
+name: besinova
+description: "A new Flutter project."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.2.3 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  google_fonts: ^6.1.0
+  cupertino_icons: ^1.0.2
+  provider: ^6.1.1
+  shared_preferences: ^2.2.2
+  flutter_animate: ^4.5.0
+  lottie: ^2.7.0
+  flutter_staggered_animations: ^1.1.1
+  animated_bottom_navigation_bar: ^1.3.0
+  http: any
+  # CSV parsing for product data
+  csv: ^5.1.1
+  # Mathematical operations and optimization
+  collection: ^1.18.0
+  # File operations for loading CSV data
+  path_provider: ^2.1.2
+  # Image caching for better performance
+  cached_network_image: ^3.3.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^2.0.0
+
+flutter:
+  uses-material-design: true
+
+  fonts:
+    - family: Cookie
+      fonts:
+        - asset: assets/fonts/Cookie-Regular.ttf
+
+  assets:
+    - assets/ayca.json
+    - assets/enriched_2025_05_21.csv
